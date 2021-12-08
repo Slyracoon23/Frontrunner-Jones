@@ -210,6 +210,8 @@ def analyze_block_range(block_range):
                                                     victim["value"] = str(victim["value"])
                                                     victim["hash"] = victim["hash"].hex()
 
+                                                    print("Proift: ", profit)
+
                                                     finding = {
                                                         "sha256_hash": sha256_hash,
                                                         "attacker_transaction": front_runner,
