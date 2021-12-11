@@ -67,7 +67,7 @@ def analysze_transaction_order(txs, block_number):
                 _from = hex(log[1][1])
                 _to = hex(log[1][2])
 
-                list_of_erc20_and_eth_transfers.append((token_address, _from, _to))
+                list_of_erc20_and_eth_transfers.append({"token_address": token_address, "from":_from, "to":_to})
 
     # save in MongoDB database
 
@@ -75,9 +75,9 @@ def analysze_transaction_order(txs, block_number):
     print(f'Execution_time analysze_transaction_orderanalysze_transaction_order: {end-start}')
     finding = {
         "block_number": block_number,
-        "transaction_list": transaction_list,
+        "transaction_hash_list": [ tx["hash"].hex() for tx in txs],
         "list_of_erc20_and_eth_transfers": list_of_erc20_and_eth_transfers,
-        "execution_time": end-start
+        "execution_time": float(end-start)
     }
 
     collection = mongo_connection["front_running"]["MEV_results"]
@@ -133,12 +133,13 @@ def analysze_block_range(block_range):
             txs = list(filter(lambda tx: is_simple_erc20_transfer(tx) == False, txs))
 
             # permutate over all possiblities
-            txs_permutations = permutations(txs)
-            for perm_txs in list(txs_permutations):
+            txs_permutations = permutations(txs,2)
+            for perm_txs in txs_permutations:
                 analysze_transaction_order(perm_txs, block_number)
 
             end = time.time()
-            print()
+            print(f'Execution_time block: {end-start}')
+
             collection = mongo_connection["front_running"]["MEV_status"]
             collection.insert_one({"block_number": block_number, "execution_time": end-start})
 
