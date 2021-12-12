@@ -196,6 +196,12 @@ def analysze_block_range(block_range):
                     return True
                 else:
                     return False
+
+            def must_contain_uniswap_call(tx):   
+                if UNISWAP_V2_CONTRACT == tx["to"]:
+                    return True
+                else:
+                    return False
           
 
 
@@ -207,26 +213,29 @@ def analysze_block_range(block_range):
 
             txs = filter(lambda tx: is_aprove_call(tx) == False, txs)
 
-            txs = list(filter(lambda tx: is_withdrawl_call(tx) == False, txs))
+            txs = filter(lambda tx: is_withdrawl_call(tx) == False, txs)
+
+            txs = list(filter(must_contain_uniswap_call, txs))
+
 
 
 
             # permutate over all possiblities
-            txs_permutations = list(permutations(txs,2))
+            txs_permutations = list(permutations(txs,3))
 
-            print(f"Number of transaction to permuate  before uniwswap: {len(txs_permutations)}")
+            print(f"Number of transaction to permuate  uniwswap: {len(txs_permutations)}")
 
 
-            def must_contain_uniswap_call(tx_permutation):   
-                contract_to = [tx["to"] for tx in tx_permutation]
-                if UNISWAP_V2_CONTRACT in contract_to:
-                    return True
-                else:
-                    return False
+            # def must_contain_uniswap_call(tx_permutation):   
+            #     contract_to = [tx["to"] for tx in tx_permutation]
+            #     if UNISWAP_V2_CONTRACT in contract_to:
+            #         return True
+            #     else:
+            #         return False
 
-            txs_permutations = list(filter(must_contain_uniswap_call,txs_permutations))
+            # txs_permutations = list(filter(must_contain_uniswap_call,txs_permutations))
             
-            print(f"Number of transaction to permuate  after uniwswap: {len(txs_permutations)}")
+            # print(f"Number of transaction to permuate  after uniwswap: {len(txs_permutations)}")
 
 
             block_data = w3.eth.getBlock(block_number - 1, False)
