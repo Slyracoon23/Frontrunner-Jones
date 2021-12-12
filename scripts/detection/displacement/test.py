@@ -26,6 +26,9 @@ BLOCK_NUMBER = 10995886
 ERC20_TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" # ERC-20 transfer event
 ETH_TRANSFER = "0x" # ETH transfer bytecode
 ERC20_TRANSFER_METHOD_ID = "0xa9059cbb"
+ETH_APPROVE_METHOD_ID = "0x095ea7b3"
+ETH_WITHDRAWL_METHOD_ID = "0x2e1a7d4d"
+UNISWAP_V2_CONTRACT = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
 
 def init_w3():
     global w3
@@ -102,20 +105,24 @@ def analysze_transaction_order(txs, emu, block_number):
     # Find logs of transactions and find data value of transfer e.g What coin was swapped?
 
     for transaction in transaction_list:
-        transaction = transaction[0]
 
-        logs = transaction.get_log_entries()
+        logs = transaction[0].get_log_entries()
 
         for log in logs:
             if hex(log[1][0]) == ERC20_TRANSFER:
-                token_address = '0x' + log[0].hex()
-                _from = hex(log[1][1])
-                _to = hex(log[1][2])
-                # don't know why this is not making 8-byte int to Long
-                # _value = bson.Int64(int(log[2].hex(), 16))
-                _value = hex(int(log[2].hex(), 16))
+                try:
+                    token_address = '0x' + log[0].hex()
+                    _from = hex(log[1][1])
+                    _to = hex(log[1][2])
+                    # don't know why this is not making 8-byte int to Long
+                    # _value = bson.Int64(int(log[2].hex(), 16))
+                    _value = hex(int(log[2].hex(), 16))
+                
 
-                list_of_erc20_and_eth_transfers.append({"token_address": token_address, "from":_from, "to":_to , "value":_value })
+                    list_of_erc20_and_eth_transfers.append({"token_address": token_address, "from":_from, "to":_to , "value":_value })
+                except Exception as e:
+                    print("weird Transfer that does not have value or NFTs")
+                    print("Error: "+str(e))
 
     # save in MongoDB database
 
@@ -176,17 +183,52 @@ def analysze_block_range(block_range):
                 else:
                     return False
 
+            def is_aprove_call(tx):
+                method_id = tx["input"][:10]
+                if method_id == ETH_APPROVE_METHOD_ID:
+                    return True
+                else:
+                    return False
+
+            def is_withdrawl_call(tx):
+                method_id = tx["input"][:10]
+                if method_id == ETH_WITHDRAWL_METHOD_ID:
+                    return True
+                else:
+                    return False
+          
 
 
             # filter eth ransactions
             # filterFalse() in itertools
             txs = filter(lambda tx: is_eth_transfer(tx) == False, txs )
             # filter transaction for single erc20 transfers
-            txs = list(filter(lambda tx: is_simple_erc20_transfer(tx) == False, txs))
+            txs = filter(lambda tx: is_simple_erc20_transfer(tx) == False, txs)
+
+            txs = filter(lambda tx: is_aprove_call(tx) == False, txs)
+
+            txs = list(filter(lambda tx: is_withdrawl_call(tx) == False, txs))
+
+
 
             # permutate over all possiblities
             txs_permutations = list(permutations(txs,2))
+
+            print(f"Number of transaction to permuate  before uniwswap: {len(txs_permutations)}")
+
+
+            def must_contain_uniswap_call(tx_permutation):   
+                contract_to = [tx["to"] for tx in tx_permutation]
+                if UNISWAP_V2_CONTRACT in contract_to:
+                    return True
+                else:
+                    return False
+
+            txs_permutations = list(filter(must_contain_uniswap_call,txs_permutations))
             
+            print(f"Number of transaction to permuate  after uniwswap: {len(txs_permutations)}")
+
+
             block_data = w3.eth.getBlock(block_number - 1, False)
 
 
@@ -221,7 +263,7 @@ def analysze_block_range(block_range):
 if __name__ == "__main__":
     init_w3()
 
-    analysze_block_range([BLOCK_NUMBER])
+    analysze_block_range(list(range(BLOCK_NUMBER, BLOCK_NUMBER + 1)))
 
     # # get block
     # block = w3.eth.getBlock(BLOCK_NUMBER, True)
