@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-WEB3_WS_PROVIDER = "wss://mainnet.infura.io/ws/v3/41e2dadcce7245d986bbc9e1196ca43b"
+WEB3_HTTP_PROVIDER = "http://127.0.0.1:8545"
 
 WEB3_HTTP_RPC_HOST = "localhost"
 WEB3_HTTP_RPC_PORT = 8545
