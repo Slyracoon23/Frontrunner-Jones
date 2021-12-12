@@ -21,7 +21,8 @@ from utils.utils import colors, get_prices, get_one_eth_to_usd, request_debug_tr
 
 from eth_utils import to_canonical_address, decode_hex, encode_hex
 
-BLOCK_NUMBER = 10995886
+START_BLOCK_NUMBER = 10882755
+END_BLOCK_NUBMER = START_BLOCK_NUMBER + 200
 
 ERC20_TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" # ERC-20 transfer event
 ETH_TRANSFER = "0x" # ETH transfer bytecode
@@ -272,7 +273,7 @@ def analysze_block_range(block_range):
 if __name__ == "__main__":
     init_w3()
 
-    analysze_block_range(list(range(BLOCK_NUMBER, BLOCK_NUMBER + 1)))
+    analysze_block_range(list(range(START_BLOCK_NUMBER, END_BLOCK_NUBMER)))
 
     # # get block
     # block = w3.eth.getBlock(BLOCK_NUMBER, True)
